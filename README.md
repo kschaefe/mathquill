@@ -155,7 +155,10 @@ Global defaults for a page may be set with `MathQuill.config({ ... })`.
 
 If `spaceBehavesLikeTab` is true the keystrokes {Shift-,}Spacebar will behave
 like {Shift-,}Tab escaping from the current block (as opposed to the default
-behavior of inserting a Space character).
+behavior of inserting a Space character). If `spaceBehavesLikeTab` is
+`'exceptRootBlock'` the keystrokes will behave as true for all blocks that are
+not the root block.  This option allows the entering of mixed fractions in the
+root block, where true does not.
 
 By default, the Left and Right keys move the cursor through all possible cursor
 positions in a particular order: right into a fraction puts the cursor at the
