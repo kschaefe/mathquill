@@ -1,9 +1,9 @@
 # [MathQuill](http://mathquill.github.com)
 
-by [Han][] and [Jay][].  Current development is proudly supported by [Desmos][], whose awesome graphing calculator makes extensive use of Mathquill.
+by [Han][] and [Jeanine][].  Current development is proudly supported by [Desmos][], whose awesome graphing calculator makes extensive use of Mathquill.
 
 [Han]: http://github.com/laughinghan
-[Jay]: http://github.com/jayferd
+[Jeanine]: http://github.com/jneen
 [Desmos]: http://desmos.com/
 
 Please note that this is a beta version, so bugs and unimplemented features
@@ -23,6 +23,7 @@ for example:
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 <script src="/path/to/mathquill.js"></script>
 <script>
+  MathQuill.interfaceVersion(1);
   $('.static-math').each(function() { MathQuill.StaticMath(this); });
   $('.math-field').each(function() { MathQuill.MathField(this); });
 </script>
@@ -38,6 +39,12 @@ To load MathQuill,
 
 [Google CDN-hosted copy]: http://code.google.com/apis/libraries/devguide.html#jquery
 [the latest tarball]: http://mathquill.com/downloads.html
+
+To use the MathQuill API, first declare an interface version:
+
+```js
+MathQuill.interfaceVersion(1);
+```
 
 Now you can call `MathQuill.StaticMath()` or `MathQuill.MathField()`, which
 MathQuill-ify an HTML element and return an API object. If the element had
@@ -65,10 +72,6 @@ HTML element of a static math or math field, returns its API object (if not,
 MathQuill(mathFieldSpan) === mathField // => true
 MathQuill(mathFieldSpan) === MathQuill(mathFieldSpan) // => true
 ```
-
-`MathQuill.noConflict()` resets the global `MathQuill` variable to whatever it
-was before, and returns the `MathQuill` function to be used locally or set to
-some other variable, _a la_ [`jQuery.noConflict()`](http://api.jquery.com/jQuery.noConflict).
 
 Any element that has been MathQuill-ified can be reverted:
 
@@ -119,7 +122,20 @@ Additionally, descendants of `MathQuill.EditableField` (currently only
 
 [on `textarea`s]: http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-48880622
 [on `input`s]: http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-34677168
-[one of these key values]: http://www.w3.org/TR/2012/WD-DOM-Level-3-Events-20120614/#fixed-virtual-key-codes
+[key values]: http://www.w3.org/TR/2012/WD-DOM-Level-3-Events-20120614/#fixed-virtual-key-codes
+
+MathQuill overwrites the global `MathQuill` variable when loaded. You can undo
+that with `.noConflict()` (similar to [`jQuery.noConflict()`]
+(http://api.jquery.com/jQuery.noConflict)):
+
+```html
+<script src="/path/to/first-mathquill.js"></script>
+<script src="/path/to/second-mathquill.js"></script>
+<script>
+var secondMathQuill = MathQuill.interfaceVersion(1).noConflict();
+secondMathQuill.StaticMath(...);
+</script>
+```
 
 #### Configuration Options
 
@@ -131,6 +147,7 @@ var el = $('<span>x^2</span>').appendTo('body');
 var mathField = MathQuill.MathField(el[0], {
   spaceBehavesLikeTab: true,
   leftRightIntoCmdGoes: 'up',
+  restrictMismatchedBrackets: true,
   sumStartsWithNEquals: true,
   supSubsRequireOperand: true,
   charsThatBreakOutOfSupSub: '+-=<>',
@@ -179,6 +196,11 @@ the same behavior as the Desmos calculator. `'down'` instead means it is the
 numerator that is always skipped, which is the same behavior as the Mac OS X
 built-in app Grapher.
 
+If `restrictMismatchedBrackets` is true then you can type [a,b) and [a,b), but
+if you try typing `[x}` or `\langle x|`, you'll get `[{x}]` or
+`\langle|x|\rangle` instead. This lets you type `(|x|+1)` normally; otherwise,
+you'd get `\left( \right| x \left| + 1 \right)`.
+
 If `sumStartsWithNEquals` is true then when you type `\sum`, `\prod`, or
 `\coprod`, the lower limit starts out with `n=`, e.g. you get the LaTeX
 `\sum_{n=}^{ }`, rather than empty by default.
@@ -194,6 +216,8 @@ the LaTeX `x^{2n+y}`, you have to hit Down or Tab (or Space if
 the LaTeX `x^{2n}+y`; this option makes `+` "break out" of the exponent and
 type what you expect. Problem is, now you can't just type `x^n+m` to get the
 LaTeX `x^{n+m}`, you have to type `x^(n+m` and delete the paren or something.
+(Doesn't apply to the first character in a superscript or subscript, so typing
+`x^-6` still results in `x^{-6}`.)
 
 `autoCommands`, a space-delimited list of LaTeX control words (no backslash,
 letters only, min length 2), defines the (default empty) set of "auto-commands",
@@ -209,17 +233,16 @@ with additional trig operators like `sech`, `arcsec`, `arsinh`, etc.)
 [Wikia]: http://latex.wikia.com/wiki/List_of_LaTeX_symbols#Named_operators:_sin.2C_cos.2C_etc.
 
 `substituteTextarea`, a function that creates a focusable DOM element, called
-when initializing a math field. It defaults to a `<textarea>`, but for example,
-Desmos substitutes a `<span tabindex=0></span>` in mobile browsers to suppress
-the built-in virtual keyboard in favor of a custom math keypad that calls the
-MathQuill API. Unfortunately there's no universal [check for a virtual keyboard]
-[StackOverflow], you can't even [detect a touchscreen][stucox] (notably
+when setting up a math field. It defaults to `<textarea autocorrect=off .../>`,
+but for example, Desmos substitutes `<span tabindex=0></span>` on iOS to
+suppress the built-in virtual keyboard in favor of a custom math keypad that
+calls the MathQuill API. Unfortunately there's no universal [check for a virtual
+keyboard][StackOverflow], you can't even [detect a touchscreen][stucox] (notably
 [Modernizr gave up][Modernizr]) and even if you could, Windows 8 and ChromeOS
 devices have both physical keyboards and touchscreens and you can connect
 physical keyboards to iOS and Android devices with Bluetooth, so touchscreen !=
-virtual keyboard. Desmos currently sniffs the user agent for iOS or Android, so
-Bluetooth keyboards just don't work in Desmos on iOS or Android, the tradeoffs
-are up to you.
+virtual keyboard. Desmos currently sniffs the user agent for iOS, so Bluetooth
+keyboards just don't work in Desmos on iOS, the tradeoffs are up to you.
 
 [StackOverflow]: http://stackoverflow.com/q/2593139/362030
 [stucox]: http://www.stucox.com/blog/you-cant-detect-a-touchscreen/
@@ -312,7 +335,7 @@ transforms, so MathQuill uses a matrix filter to stretch parens etc,
 which [anti-aliases wrongly without an opaque background][Transforms],
 so MathQuill defaults to white.)
 
-[Transforms]: http://github.com/laughinghan/mathquill/wiki/Transforms
+[Transforms]: http://github.com/mathquill/mathquill/wiki/Transforms
 
 ## Building and Testing
 
@@ -338,8 +361,8 @@ installing the necessary build tools.)
 
 All the CSS is in `src/css`. Most of it's pretty straightforward, the choice of
 font isn't settled, and fractions are somewhat arcane, see the Wiki pages
-["Fonts"](http://github.com/laughinghan/mathquill/wiki/Fonts) and
-["Fractions"](http://github.com/laughinghan/mathquill/wiki/Fractions).
+["Fonts"](http://github.com/mathquill/mathquill/wiki/Fonts) and
+["Fractions"](http://github.com/mathquill/mathquill/wiki/Fractions).
 
 All the JavaScript that you actually want to read is in `src/`, `build/` is
 created by `make` to contain the same JS cat'ed and minified.
@@ -407,7 +430,7 @@ throughout MathQuill, plus some globals and opening boilerplate.
 Classes are defined using [Pjs][], and the variable `_` is used by convention as
 the prototype.
 
-[pjs]: https://github.com/jayferd/pjs
+[pjs]: https://github.com/jneen/pjs
 
 `services/*.util.js` files are unimportant to the overall architecture, you can
 ignore them until you have to deal with code that is using them.

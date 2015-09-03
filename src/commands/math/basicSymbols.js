@@ -6,8 +6,10 @@ var Digit = P(VanillaSymbol, function(_, super_) {
   _.createLeftOf = function(cursor) {
     if (cursor.options.autoSubscriptNumerals
         && cursor.parent !== cursor.parent.parent.sub
-        && (cursor[L] instanceof Variable
-          || (cursor[L] instanceof SupSub && cursor[L][L] instanceof Variable))) {
+        && ((cursor[L] instanceof Variable && cursor[L].isItalic !== false)
+            || (cursor[L] instanceof SupSub
+                && cursor[L][L] instanceof Variable
+                && cursor[L][L].isItalic !== false))) {
       LatexCmds._().createLeftOf(cursor);
       super_.createLeftOf.call(this, cursor);
       cursor.insRightOf(cursor.parent.parent);
@@ -78,6 +80,7 @@ var Letter = P(Variable, function(_, super_) {
     super_.createLeftOf.apply(this, arguments);
   };
   _.italicize = function(bool) {
+    this.isItalic = bool;
     this.jQ.toggleClass('mq-operator-name', !bool);
     return this;
   };
@@ -204,16 +207,16 @@ LatexCmds.operatorname = P(MathCommand, function(_) {
 
 LatexCmds.f = P(Letter, function(_, super_) {
   _.init = function() {
-    Symbol.p.init.call(this, this.letter = 'f', '<var class="mq-florin">&fnof;</var>');
+    Symbol.p.init.call(this, this.letter = 'f', '<var class="mq-f">f</var>');
   };
   _.italicize = function(bool) {
-    this.jQ.html(bool ? '&fnof;' : 'f').toggleClass('mq-florin', bool);
+    this.jQ.html('f').toggleClass('mq-f', bool);
     return super_.italicize.apply(this, arguments);
   };
 });
 
 // VanillaSymbol's
-LatexCmds[' '] = LatexCmds.space = bind(VanillaSymbol, '\\ ', ' ');
+LatexCmds[' '] = LatexCmds.space = bind(VanillaSymbol, '\\ ', '&nbsp;');
 
 LatexCmds["'"] = LatexCmds.prime = bind(VanillaSymbol, "'", '&prime;');
 
@@ -426,6 +429,7 @@ var Inequality = P(BinaryOperator, function(_, super_) {
   _.deleteTowards = function(dir, cursor) {
     if (dir === L && !this.strict) {
       this.swap(true);
+      this.bubble('reflow');
       return;
     }
     super_.deleteTowards.apply(this, arguments);
@@ -449,6 +453,7 @@ var Equality = P(BinaryOperator, function(_, super_) {
   _.createLeftOf = function(cursor) {
     if (cursor[L] instanceof Inequality && cursor[L].strict) {
       cursor[L].swap(false);
+      cursor[L].bubble('reflow');
       return;
     }
     super_.createLeftOf.apply(this, arguments);
@@ -461,4 +466,4 @@ LatexCmds.times = bind(BinaryOperator, '\\times ', '&times;', '[x]');
 LatexCmds['÷'] = LatexCmds.div = LatexCmds.divide = LatexCmds.divides =
   bind(BinaryOperator,'\\div ','&divide;', '[/]');
 
-CharCmds['~'] = LatexCmds.sim = bind(BinaryOperator, '\\sim ', '&sim;', '~');
+CharCmds['~'] = LatexCmds.sim = bind(BinaryOperator, '\\sim ', '~', '~');

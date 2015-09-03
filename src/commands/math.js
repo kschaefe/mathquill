@@ -108,9 +108,8 @@ var MathCommand = P(MathElement, function(_, super_) {
     cursor.insAtDirEnd(-dir, updownInto || this.ends[-dir]);
   };
   _.deleteTowards = function(dir, cursor) {
-    cursor.startSelection();
-    this.selectTowards(dir, cursor);
-    cursor.select();
+    if (this.isEmpty()) cursor[dir] = this.remove()[dir];
+    else cursor.insAtDirEnd(-dir, this.ends[-dir]);
   };
   _.selectTowards = function(dir, cursor) {
     cursor[-dir] = this;
@@ -398,7 +397,8 @@ var MathBlock = P(MathElement, function(_, super_) {
   };
   _.chToCmd = function(ch) {
     var cons;
-    if (ch.match(/^[a-eg-zA-Z]$/)) //exclude f because want florin
+    // exclude f because it gets a dedicated command with more spacing
+    if (ch.match(/^[a-eg-zA-Z]$/))
       return Letter(ch);
     else if (/^\d$/.test(ch))
       return Digit(ch);

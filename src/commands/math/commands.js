@@ -191,7 +191,8 @@ var SupSub = P(MathCommand, function(_, super_) {
         else cursor.clearSelection().insRightOf(this.parent);
         return cmd.createLeftOf(cursor.show());
       }
-      if (cursor.options.charsThatBreakOutOfSupSub.indexOf(ch) > -1) {
+      if (cursor[L] && !cursor[R] && !cursor.selection
+          && cursor.options.charsThatBreakOutOfSupSub.indexOf(ch) > -1) {
         cursor.insRightOf(this.parent);
       }
       MathBlock.p.write.apply(this, arguments);
@@ -210,10 +211,13 @@ var SupSub = P(MathCommand, function(_, super_) {
       else if (cmd) cmd.deleteTowards(dir, cursor.insAtDirEnd(-dir, this.sub));
 
       // TODO: factor out a .removeBlock() or something
-      // Also note `-dir` because in e.g. x_1^2| want backspacing (leftward)
-      // to delete the 1 but to end up rightward of x^2; with non-negated
-      // `dir` (try it), the cursor appears to have gone "through" the ^2.
-      if (this.sub.isEmpty()) this.sub.deleteOutOf(-dir, cursor.insAtLeftEnd(this.sub));
+      if (this.sub.isEmpty()) {
+        this.sub.deleteOutOf(L, cursor.insAtLeftEnd(this.sub));
+        if (this.sup) cursor.insDirOf(-dir, this);
+        // Note `-dir` because in e.g. x_1^2| want backspacing (leftward)
+        // to delete the 1 but to end up rightward of x^2; with non-negated
+        // `dir` (try it), the cursor appears to have gone "through" the ^2.
+      }
     }
     else super_.deleteTowards.apply(this, arguments);
   };
@@ -240,17 +244,18 @@ var SupSub = P(MathCommand, function(_, super_) {
       block.adopt(this, 0, this.sup).upOutOf = this.sup;
       block.jQ = $('<span class="mq-sub"></span>').append(block.jQ.children())
         .attr(mqBlockId, block.id).appendTo(this.jQ.removeClass('mq-sup-only'));
-      this.jQ.append('<span style="display:inline-block;width:0">&nbsp;</span>');
+      this.jQ.append('<span style="display:inline-block;width:0">&#8203;</span>');
     }
     // like 'sub sup'.split(' ').forEach(function(supsub) { ... });
     for (var i = 0; i < 2; i += 1) (function(cmd, supsub, oppositeSupsub, updown) {
       cmd[supsub].deleteOutOf = function(dir, cursor) {
-        cursor.insDirOf(dir, this.parent);
+        cursor.insDirOf((this[dir] ? -dir : dir), this.parent);
         if (!this.isEmpty()) {
-          cursor[-dir] = this.ends[dir];
+          var end = this.ends[dir];
           this.children().disown()
-            .withDirAdopt(dir, cursor.parent, cursor[dir], this.parent)
-            .jQ.insDirOf(dir, this.parent.jQ);
+            .withDirAdopt(dir, cursor.parent, cursor[dir], cursor[-dir])
+            .jQ.insDirOf(-dir, cursor.jQ);
+          cursor[-dir] = end;
         }
         cmd.supsub = oppositeSupsub;
         delete cmd[supsub];
@@ -281,7 +286,7 @@ LatexCmds._ = P(SupSub, function(_, super_) {
   _.htmlTemplate =
       '<span class="mq-supsub mq-non-leaf">'
     +   '<span class="mq-sub">&0</span>'
-    +   '<span style="display:inline-block;width:0">&nbsp;</span>'
+    +   '<span style="display:inline-block;width:0">&#8203;</span>'
     + '</span>'
   ;
   _.textTemplate = [ '_' ];
@@ -383,7 +388,7 @@ LatexCmds.fraction = P(MathCommand, function(_, super_) {
       '<span class="mq-fraction mq-non-leaf">'
     +   '<span class="mq-numerator">&0</span>'
     +   '<span class="mq-denominator">&1</span>'
-    +   '<span style="display:inline-block;width:0">&nbsp;</span>'
+    +   '<span style="display:inline-block;width:0">&#8203;</span>'
     + '</span>'
   ;
   _.textTemplate = ['(', '/', ')'];
@@ -520,23 +525,29 @@ var Bracket = P(P(MathCommand, DelimsMixin), function(_, super_) {
   _.latex = function() {
     return '\\left'+this.sides[L].ctrlSeq+this.ends[L].latex()+'\\right'+this.sides[R].ctrlSeq;
   };
-  _.oppBrack = function(node, expectedSide) {
-    // node must be 1-sided bracket of expected side (if any, may be undefined),
-    // and unless I'm a pipe, node and I must be opposite-facing sides
+  _.oppBrack = function(opts, node, expectedSide) {
+    // return node iff it's a 1-sided bracket of expected side (if any, may be
+    // undefined), and of opposite side from me if I'm not a pipe
     return node instanceof Bracket && node.side && node.side !== -expectedSide
-      && (this.sides[this.side].ch === '|' || node.side === -this.side) && node;
+      && (this.sides[this.side].ch === '|' || node.side === -this.side)
+      && (!opts.restrictMismatchedBrackets
+        || OPP_BRACKS[this.sides[this.side].ch] === node.sides[node.side].ch
+        || { '(': ']', '[': ')' }[this.sides[L].ch] === node.sides[R].ch) && node;
   };
   _.closeOpposing = function(brack) {
     brack.side = 0;
     brack.sides[this.side] = this.sides[this.side]; // copy over my info (may be
-    brack.delimjQs.eq(this.side === L ? 0 : 1) // mis-matched, like [a, b))
+    brack.delimjQs.eq(this.side === L ? 0 : 1) // mismatched, like [a, b))
       .removeClass('mq-ghost').html(this.sides[this.side].ch);
   };
   _.createLeftOf = function(cursor) {
     if (!this.replacedFragment) { // unless wrapping seln in brackets,
         // check if next to or inside an opposing one-sided bracket
-      var brack = this.oppBrack(cursor[L], L) || this.oppBrack(cursor[R], R)
-                  || this.oppBrack(cursor.parent.parent);
+        // (must check both sides 'cos I might be a pipe)
+      var opts = cursor.options;
+      var brack = this.oppBrack(opts, cursor[L], L)
+                  || this.oppBrack(opts, cursor[R], R)
+                  || this.oppBrack(opts, cursor.parent.parent);
     }
     if (brack) {
       var side = this.side = -brack.side; // may be pipe with .side not yet set
@@ -575,21 +586,27 @@ var Bracket = P(P(MathCommand, DelimsMixin), function(_, super_) {
       return;
     }
 
+    var opts = cursor.options, wasSolid = !this.side;
     this.side = -side;
-    // check if like deleting outer close-brace of [(1+2)+3} where inner open-
-    if (this.oppBrack(this.ends[L].ends[this.side], side)) { // paren is ghost,
-      this.closeOpposing(this.ends[L].ends[this.side]); // if so become [1+2)+3
+    // if deleting like, outer close-brace of [(1+2)+3} where inner open-paren
+    if (this.oppBrack(opts, this.ends[L].ends[this.side], side)) { // is ghost,
+      this.closeOpposing(this.ends[L].ends[this.side]); // then become [1+2)+3
       var origEnd = this.ends[L].ends[side];
       this.unwrap();
       if (origEnd.siblingCreated) origEnd.siblingCreated(cursor.options, side);
       sib ? cursor.insDirOf(-side, sib) : cursor.insAtDirEnd(side, parent);
     }
-    else { // check if like deleting inner close-brace of ([1+2}+3) where
-      if (this.oppBrack(this.parent.parent, side)) { // outer open-paren is
-        this.parent.parent.closeOpposing(this); // ghost, if so become [1+2+3)
+    else { // if deleting like, inner close-brace of ([1+2}+3) where outer
+      if (this.oppBrack(opts, this.parent.parent, side)) { // open-paren is
+        this.parent.parent.closeOpposing(this); // ghost, then become [1+2+3)
         this.parent.parent.unwrap();
+      } // else if deleting outward from a solid pair, unwrap
+      else if (outward && wasSolid) {
+        this.unwrap();
+        sib ? cursor.insDirOf(-side, sib) : cursor.insAtDirEnd(side, parent);
+        return;
       }
-      else { // deleting one of a pair of brackets, become one-sided
+      else { // else deleting just one of a pair of brackets, become one-sided
         this.sides[side] = { ch: OPP_BRACKS[this.sides[this.side].ch],
                              ctrlSeq: OPP_BRACKS[this.sides[this.side].ctrlSeq] };
         this.delimjQs.removeClass('mq-ghost')
