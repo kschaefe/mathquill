@@ -11,6 +11,9 @@ module.exports = function(grunt) {
             build: {
                 command: 'make'
             },
+            test: {
+                command: 'make test'
+            },
             clean: {
                 command: 'make clean'
             }
@@ -35,6 +38,10 @@ module.exports = function(grunt) {
 
     grunt.registerTask('clean', [
         'shell:clean'
+    ]);
+
+    grunt.registerTask('test', [
+        'shell:test'
     ]);
 
     grunt.registerTask('publish', [
