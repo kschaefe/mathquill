@@ -18,23 +18,29 @@ module.exports = function(grunt) {
                 command: 'make clean'
             }
         },
-        copy: {
-            bower: {
-                cwd: '.',
-                src: 'bower.json',
-                dest: 'build/bower.json'
-            }
-        },
-        'release-bower': {
+        bowerRelease: {
             options: {
-                scanPath: 'build'
+                overwriteTag: 'true'
+            },
+            mathquill: {
+                options: {
+                    endpoint: 'https://github.com/apollo-ctp/mathquill.git',
+                    name: 'apollo-ctp-mathquill',
+                    stagingDir: 'staging'
+                },
+                files: [{
+                    expand: true,
+                    cwd: 'build',
+                    src: '**/*',
+                    dest: 'bower'
+                }]
             }
         }
     });
 
     grunt.loadNpmTasks('grunt-shell');
     grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-release-bower');
+    grunt.loadNpmTasks('grunt-bower-release');
 
     grunt.registerTask('clean', [
         'shell:clean'
@@ -46,7 +52,7 @@ module.exports = function(grunt) {
 
     grunt.registerTask('publish', [
         'shell:build',
-        'copy:bower',
-        'release-bower'
+//        'copy:bower',
+        'bowerRelease:mathquill'
     ]);
 }
