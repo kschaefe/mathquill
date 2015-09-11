@@ -246,7 +246,7 @@ var Cursor = P(Point, function(_) {
         if (elt[L] || elt[R]) return elt
         else {
           var gramp = elt.parent.parent;
-          if (gramp && (gramp.ctrlSeq === 'class' || gramp.ctrlSeq === 'textcolor')) return gramp;
+          if (gramp && gramp.isStyleBlock()) return gramp;
         }
 
         return elt;
@@ -255,7 +255,7 @@ var Cursor = P(Point, function(_) {
       // returns the element to use for figuring out whether this element is an operator
       // usually the element itself, but if the element is a class or textcolor command wrapping one thing, returns what is being wrapped
       var eltForOp = function(elt) {
-        if (elt.ctrlSeq === 'class' || elt.ctrlSeq === 'textcolor') {
+        if (elt.isStyleBlock()) {
           var innerBlock = elt.blocks[0];
           if (innerBlock.ends[L] === innerBlock.ends[R]) return innerBlock.ends[L];
         }
