@@ -12,6 +12,7 @@ JS environment could actually contain many instances. */
 //A fake cursor in the fake textbox that the math is rendered in.
 var Cursor = P(Point, function(_) {
   _.init = function(initParent, options) {
+    pray('options must be a valid object: ' + options, typeof options === 'object' && options !== null);
     this.parent = initParent;
     this.options = options;
 
@@ -223,8 +224,8 @@ var Cursor = P(Point, function(_) {
     if (leftEnd instanceof Point) leftEnd = leftEnd[R];
     if (rightEnd instanceof Point) rightEnd = rightEnd[L];
 
-		// adjust selections for strict operators
-		var strictOperators = this.options.strictOperatorSelection;
+    // adjust selections for strict operators
+    var strictOperators = this.options.strictOperatorSelection;
     if (strictOperators !== undefined) {
       var isPrefixOp = function(ctrlSeq) {
         return strictOperators.prefixOperators &&
