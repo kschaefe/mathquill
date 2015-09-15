@@ -147,6 +147,7 @@ secondMathQuill.StaticMath(...);
 var L = MathQuill.L, R = MathQuill.R;
 var el = $('<span>x^2</span>').appendTo('body');
 var mathField = MathQuill.MathField(el[0], {
+  tabAction: 'escapeAndOut', // or 'escapeAndNextTemplate'
   spaceBehavesLikeTab: true,
   leftRightIntoCmdGoes: 'up',
   restrictMismatchedBrackets: true,
@@ -175,6 +176,15 @@ To change `mathField`'s options, the `.config({ ... })` method takes an options
 object in the same format.
 
 Global defaults for a page may be set with `MathQuill.config({ ... })`.
+
+`tabAction` configures the way MathQuill responds to Tab.  By default (
+`escapeAndOut`), {Shift-,}Tab will escape out of a template until it reaches
+the root block.  At that point MathQuill ignores the keystroke and allows the
+default browser behavior to occur.  The `escapeAndNextTemplate` approach
+similarly escapes out of templates, but when reaching the root block, the next
+{Shift-,}Tab will find the next template in the desired direction.  If there
+are no such templates, then MathQuill allows the default browser behavior to
+occur.
 
 If `spaceBehavesLikeTab` is true the keystrokes {Shift-,}Spacebar will behave
 like {Shift-,}Tab escaping from the current block (as opposed to the default
