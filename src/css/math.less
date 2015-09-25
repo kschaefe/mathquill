@@ -40,18 +40,9 @@
     box-sizing: border-box;
   }
 
-  // TODO: what's the difference between these?
   .mq-empty {
-    background: #ccc;
-    &.mq-root-block {
-      background: transparent;
-    }
+    .empty-template(@EmptyTemplateStyle, true);
   }
-
-  &.mq-empty {
-    background: transparent;
-  }
-
 
   .mq-text-mode {
     font-size: 87%;

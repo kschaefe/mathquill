@@ -1,0 +1,16 @@
+
+// this file contains variables (and default-guarded mixins)
+//that the user may override when constructing a copy of mathquill.css
+@Highlight: #B4D5FE;
+@HighlightText: HighlightText;
+@ActiveBorder: ActiveBorder;
+@EmptyTemplateStyle: mathquill;
+
+// users can assign a value for EmptyTemplate and ensure their when matches
+.empty-template (@style, @add-root: false) when (default()) {
+  background: #ccc;
+
+  &.mq-root-block when (@add-root = true) {
+    background: transparent;
+  }
+}
