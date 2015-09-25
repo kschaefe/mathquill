@@ -225,6 +225,13 @@ If `sumStartsWithNEquals` is true then when you type `\sum`, `\prod`, or
 there's nothing to the left of the cursor to be exponentiated or subscripted.
 Averts the especially confusing typo `x^^2`, which looks much like `x^2`.
 
+`supSubsShowEmptyBase` is a useful corollary when allowing superscripts and
+subscripts to be entered without a base (which is the default).  When
+`supSubsShowEmptyBase` is true then type `^` without a base, such as in an
+empty field or to the right of an operator, will place a empty box (defaulted
+to gray), in the position of the base.  This gives the user a visual clue that
+they have an unbased super- or subscript.
+
 `charsThatBreakOutOfSupSub` sets the chars that when typed, "break out" of
 superscripts and subscripts: for example, typing `x^2n+y` normally results in
 the LaTeX `x^{2n+y}`, you have to hit Down or Tab (or Space if

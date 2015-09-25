@@ -237,6 +237,10 @@ var SupSub = P(MathCommand, function(_, super_) {
   _.respace = _.siblingCreated = _.siblingDeleted = function(opts, dir) {
     if (dir === R) return; // ignore if sibling only changed on the right
     this.jQ.toggleClass('mq-limit', this[L].ctrlSeq === '\\int ');
+
+    //if (this.parent.controller.API.__options.supSubsShowEmptyBase) {
+      this.jQ.toggleClass('mq-empty-base', !this[L] || this[L] instanceof BinaryOperator);
+    //}
   };
   _.addBlock = function(block) {
     if (this.supsub === 'sub') {
