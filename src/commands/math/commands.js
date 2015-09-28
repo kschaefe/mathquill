@@ -185,7 +185,7 @@ var SupSub = P(MathCommand, function(_, super_) {
         break;
       }
     }
-    this.respace();
+    this.respace(cursor.options);
   };
   Options.p.charsThatBreakOutOfSupSub = '';
   _.finalizeTree = function() {
@@ -235,12 +235,13 @@ var SupSub = P(MathCommand, function(_, super_) {
     return latex('_', this.sub) + latex('^', this.sup);
   };
   _.respace = _.siblingCreated = _.siblingDeleted = function(opts, dir) {
+    pray('missing required options', opts);
     if (dir === R) return; // ignore if sibling only changed on the right
     this.jQ.toggleClass('mq-limit', this[L].ctrlSeq === '\\int ');
 
-    //if (this.parent.controller.API.__options.supSubsShowEmptyBase) {
+    if (opts.supSubsShowEmptyBase) {
       this.jQ.toggleClass('mq-empty-base', !this[L] || this[L] instanceof BinaryOperator);
-    //}
+    }
   };
   _.addBlock = function(block) {
     if (this.supsub === 'sub') {

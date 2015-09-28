@@ -118,7 +118,7 @@ Controller.open(function(_, super_) {
       var html = block.join('html');
       jQ.html(html);
       root.jQize(jQ.children());
-      root.finalizeInsert(cursor.options);
+      root.finalizeInsert(cursor.options, cursor);
     }
     else {
       jQ.empty();
@@ -171,7 +171,7 @@ Controller.open(function(_, super_) {
 
       root.jQize().appendTo(root.jQ);
 
-      root.finalizeInsert(cursor.options);
+      root.finalizeInsert(cursor.options, cursor);
     }
   };
 });
