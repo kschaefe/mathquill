@@ -117,30 +117,9 @@
   //   testing. Should also make the superscript shrink to the size of
   //   its contents, rather than always being as wide as the subscript.
   //   See also .fraction
+
   .mq-supsub {
     font-size: 90%;
-    vertical-align: -.5em;
-    &.mq-limit {
-      font-size: 80%;
-      vertical-align: -.4em;
-    }
-
-    &.mq-sup-only {
-      vertical-align: .5em; //TODO pull this value out as its undone below
-
-      .mq-sup {
-        display: inline-block;
-        vertical-align: text-bottom;
-      }
-
-      &.mq-empty-base:before {
-        content: '\2002'; // EN SPACE
-        white-space: pre;
-        color: transparent; //just in case
-        vertical-align: -.5em; //TODO sync with outer v-align value (but negative)
-        .empty-template(@EmptyTemplateStyle);
-      }
-    }
 
     .mq-sup {
       display: block;
@@ -150,8 +129,67 @@
       display: block;
       float: left;
     }
-    &.mq-limit .mq-sub {
-      margin-left: -.25em;
+
+    &.mq-sup-only .mq-sup {
+      display: inline-block;
+      vertical-align: text-bottom;
+    }
+
+    &:not(.mq-empty-base) {
+      vertical-align: -.5em;
+
+      &.mq-sup-only {
+        vertical-align: .5em;
+      }
+    }
+
+    &.mq-empty-base {
+      &:before {
+        content: '\2002'; // EN SPACE
+        white-space: pre;
+        color: transparent; //just in case
+        .empty-template(@EmptyTemplateStyle);
+      }
+
+      .mq-sup {
+        display: inline-block;
+        vertical-align: .5em;
+      }
+
+      &.mq-sub-only {
+        .mq-sub {
+          display: inline-block;
+          vertical-align: -.5em;
+          float: none;
+        }
+      }
+
+      //TODO this doesn't procduce good visuals
+      //stuck when faking a base for a super/subscript combo
+      &:not(.mq-sup-only):not(.mq-sub-only) {
+        vertical-align: middle;
+
+        .mq-sub {
+          margin-top: 1em;
+          margin-left: -1em;
+          float: right;
+        }
+
+        //weird &#8203; child
+        span:last-child {
+          margin-top: -1em;
+          float: left;
+        }
+      }
+    }
+
+    &.mq-limit {
+      font-size: 80%;
+      vertical-align: -.4em;
+
+      .mq-sub {
+        margin-left: -.25em;
+      }
     }
 
     .mq-binary-operator {
@@ -166,7 +204,7 @@
   }
 
   //ensure that the empty box isn't displayed when the cursor is "in" it
-  .mq-cursor + .mq-supsub.mq-sup-only.mq-empty-base:before {
+  .mq-cursor + .mq-supsub.mq-empty-base:before {
     background-color: transparent;
   }
 
